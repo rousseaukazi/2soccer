@@ -314,6 +314,8 @@ function loadDuckModel() {
             
             // Store animations
             duckAnimations = gltf.animations;
+
+            console.log("LOOK AT ME:",duckAnimations);
             
             // Create animation mixer
             duckMixer = new THREE.AnimationMixer(duck);
@@ -1700,6 +1702,62 @@ function startActionSequence() {
                     // Start the animation
                     duckReactAction.reset();
                     duckReactAction.play();
+                    
+                    // Add event listener for when save animation finishes
+                    duckMixer.addEventListener('finished', function(e) {
+                        if (e.action === duckReactAction) {
+                            // Check if this is the second animation
+                            if (duckReactAction._clip === duckAnimations[4]) {
+                                // If it's the second animation, hold the last frame
+                                duckReactAction.enabled = true;
+                                duckReactAction.paused = true;
+                                duckReactAction.time = duckReactAction._clip.duration;
+                                return;
+                            }
+                            
+                            // Find the hip bone to track position
+                            let hipBone;
+                            duck.traverse(node => {
+                                if (node.isBone && node.name === "mixamorigHips") {
+                                    hipBone = node;
+                                }
+                            });
+                            
+                            // Get ending position
+                            const worldPos = new THREE.Vector3();
+                            hipBone.getWorldPosition(worldPos);
+                            
+                            // Update duck position to match end of animation
+                            duck.position.x = worldPos.x;
+                            duck.position.y = 0; // Keep on ground
+                            duck.position.z = worldPos.z;
+                            
+                            // Hold the last frame of the first animation
+                            duckReactAction.paused = true;
+                            duckReactAction.time = duckReactAction._clip.duration - 0.1; // Set to last frame
+                            
+                            // Delay the second animation
+                            setTimeout(() => {
+                                // Create a completely new action
+                                duckMixer.stopAllAction();
+                                
+                                // Create the flip animation
+                                const flipAction = duckMixer.clipAction(duckAnimations[4]);
+                                flipAction.reset();
+                                flipAction.setLoop(THREE.LoopOnce);
+                                flipAction.clampWhenFinished = true;
+                                
+                                // Play the animation
+                                flipAction.play();
+                                
+                                // Update reference to current action
+                                duckReactAction = flipAction;
+                                
+                                // Update the animation name display
+                                updateActiveDuckAnimationText(duckAnimations[4].name);
+                            }, 600);
+                        }
+                    });
                     
                     console.log(`Duck goal_save animation started: ${duckAnimations[saveAnimIndex].name} (index ${saveAnimIndex})`);
                 }
