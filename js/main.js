@@ -1715,39 +1715,127 @@ function startActionSequence() {
                                 return;
                             }
                             
-                            // Find the hip bone to track position
-                            let hipBone;
+                            // Create a simple fade effect
+                            let opacity = 1.0;
+                            const fadeOutDuration = 100; // ms
+                            const fadeInDuration = 100; // ms
+                            const startTime = Date.now();
+                            
+                            // Find all materials on the duck
+                            const materials = [];
                             duck.traverse(node => {
-                                if (node.isBone && node.name === "mixamorigHips") {
-                                    hipBone = node;
+                                if (node.isMesh && node.material) {
+                                    if (Array.isArray(node.material)) {
+                                        node.material.forEach(mat => {
+                                            if (!materials.includes(mat)) {
+                                                materials.push(mat);
+                                                // Enable transparency
+                                                mat.transparent = true;
+                                            }
+                                        });
+                                    } else {
+                                        if (!materials.includes(node.material)) {
+                                            materials.push(node.material);
+                                            // Enable transparency
+                                            node.material.transparent = true;
+                                        }
+                                    }
                                 }
                             });
                             
-                            // Get ending position
-                            const worldPos = new THREE.Vector3();
-                            hipBone.getWorldPosition(worldPos);
+                            // Store original opacity values
+                            const originalOpacity = materials.map(mat => mat.opacity);
                             
-                            // Update duck position to match end of animation
-                            duck.position.x = worldPos.x;
-                            duck.position.y = 0; // Keep on ground
-                            duck.position.z = worldPos.z;
+                            // Fade out function
+                            function fadeOut() {
+                                const elapsed = Date.now() - startTime;
+                                opacity = Math.max(0, 1 - (elapsed / fadeOutDuration));
+                                
+                                // Apply opacity to all materials
+                                materials.forEach(mat => {
+                                    mat.opacity = opacity;
+                                });
+                                
+                                if (opacity > 0) {
+                                    requestAnimationFrame(fadeOut);
+                                } else {
+                                    // Duck is now invisible, set up the next animation
+                                    setupNextAnimation();
+                                }
+                            }
                             
-                            // Hold the last frame of the first animation
-                            duckReactAction.paused = true;
-                            duckReactAction.time = duckReactAction._clip.duration - 0.1; // Set to last frame
+                            // Start fade out
+                            fadeOut();
                             
-                            // Delay the second animation
-                            setTimeout(() => {
-                                // Create a completely new action
-                                duckMixer.stopAllAction();
+                            // Set up the next animation
+                            function setupNextAnimation() {
+                                // Find the hip bone to track position
+                                let hipBone;
+                                duck.traverse(node => {
+                                    if (node.isBone && node.name === "mixamorigHips") {
+                                        hipBone = node;
+                                    }
+                                });
+                                
+                                // Get ending position
+                                const worldPos = new THREE.Vector3();
+                                hipBone.getWorldPosition(worldPos);
+                                
+                                // Update duck position to match end of animation
+                                duck.position.x = worldPos.x;
+                                duck.position.y = 0; // Keep on ground
+                                duck.position.z = worldPos.z;
+                                
+                                // Store the current position
+                                const currentPos = duck.position.clone();
                                 
                                 // Create the flip animation
+                                duckMixer.stopAllAction();
                                 const flipAction = duckMixer.clipAction(duckAnimations[4]);
                                 flipAction.reset();
                                 flipAction.setLoop(THREE.LoopOnce);
                                 flipAction.clampWhenFinished = true;
                                 
-                                // Play the animation
+                                // Play the animation for a tiny amount to see where it positions the model
+                                flipAction.play();
+                                duckMixer.update(0.001);
+                                
+                                // Calculate the offset between where we want to be and where the animation puts us
+                                const newPos = duck.position.clone();
+                                const offset = new THREE.Vector3().subVectors(currentPos, newPos);
+                                
+                                // Apply the offset to keep the duck in the same place
+                                duck.position.add(offset);
+                                
+                                // Reset and replay the animation from the adjusted position
+                                flipAction.reset();
+                                
+                                // Start the fade in
+                                const fadeInStartTime = Date.now();
+                                
+                                // Fade in function
+                                function fadeIn() {
+                                    const elapsed = Date.now() - fadeInStartTime;
+                                    opacity = Math.min(1, elapsed / fadeInDuration);
+                                    
+                                    // Apply opacity to all materials
+                                    materials.forEach((mat, i) => {
+                                        mat.opacity = opacity * originalOpacity[i];
+                                    });
+                                    
+                                    if (opacity < 1) {
+                                        requestAnimationFrame(fadeIn);
+                                    } else {
+                                        // Restore original transparency settings
+                                        materials.forEach((mat, i) => {
+                                            mat.opacity = originalOpacity[i];
+                                            mat.transparent = originalOpacity[i] < 1;
+                                        });
+                                    }
+                                }
+                                
+                                // Start fade in and play animation
+                                fadeIn();
                                 flipAction.play();
                                 
                                 // Update reference to current action
@@ -1755,7 +1843,7 @@ function startActionSequence() {
                                 
                                 // Update the animation name display
                                 updateActiveDuckAnimationText(duckAnimations[4].name);
-                            }, 600);
+                            }
                         }
                     });
                     
