@@ -210,7 +210,7 @@ function loadPigModel() {
     const loader = new THREE.GLTFLoader();
 
     loader.load(
-        './models/pig.glb',
+        './models/pig2.glb',
         function (gltf) {
             const model = gltf.scene;
             
@@ -248,6 +248,8 @@ function loadPigModel() {
                     break;
                 }
             }
+
+            console.log("LOOK AT ME:",pigAnimations[0]);
             
             // Play the idle animation
             const idleAction = pigMixer.clipAction(pigAnimations[idleAnimIndex]);
@@ -1591,7 +1593,7 @@ function startActionSequence() {
             });
             
             // Play the kick animation and store the action
-            pigKickAction = pigMixer.clipAction(pigAnimations[kickAnimIndex]);
+            pigKickAction = pigMixer.clipAction(pigAnimations[4]);
             
             // Set the animation to play once
             pigKickAction.setLoop(THREE.LoopOnce);
@@ -1605,6 +1607,15 @@ function startActionSequence() {
             // Add event listener for animation sequencing
             pigMixer.addEventListener('finished', function(e) {
                 if (e.action === pigKickAction && hipBone) {
+                    // Check if this is the second animation
+                    if (pigKickAction._clip === pigAnimations[0]) {
+                        // If it's the second animation, hold the last frame
+                        pigKickAction.enabled = true;
+                        pigKickAction.paused = true;
+                        pigKickAction.time = pigKickAction._clip.duration;
+                        return;
+                    }
+                    
                     // Get ending position
                     const worldPos = new THREE.Vector3();
                     hipBone.getWorldPosition(worldPos);
@@ -1614,14 +1625,32 @@ function startActionSequence() {
                     pig.position.y = 0; // Keep on ground
                     pig.position.z = worldPos.z;
                     
-                    // Reset and replay the kick animation
-                    pigKickAction.reset();
-                    pigKickAction.play();
+                    // Create a new kick action for the second animation
+                    const nextKickAction = pigMixer.clipAction(pigAnimations[0]);
+                    nextKickAction.reset();
+                    nextKickAction.setLoop(THREE.LoopOnce);
+                    nextKickAction.clampWhenFinished = true;
+
+                    // Set starting frame (time in seconds)
+                    const fps = 30;  // assuming 30 fps animation
+                    const startFrame = 40;
+                    nextKickAction.time = startFrame / fps;
+                    
+                    // Crossfade between animations
+                    pigKickAction.crossFadeTo(nextKickAction, .4, true);
+                    
+                    // Play second animation in next frame
+                    requestAnimationFrame(() => {
+                        nextKickAction.play();
+                    });
+                    
+                    // Update reference to current action
+                    pigKickAction = nextKickAction;
                     
                     // Update the active animation text
-                    updateActiveAnimationText(pigAnimations[kickAnimIndex].name);
+                    updateActiveAnimationText(pigAnimations[0].name);
                     
-                    console.log(`Replaying kick animation from position:`, worldPos);
+                    console.log(`Crossfading to next kick animation from position:`, worldPos);
                 }
             });
             
