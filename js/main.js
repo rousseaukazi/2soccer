@@ -207,82 +207,63 @@ function animate() {
 
 // Load the pig model with updated position and default animation
 function loadPigModel() {
-    // Create a loader
     const loader = new THREE.GLTFLoader();
-    
-    // Load the model
+
     loader.load(
-        'models/pig.glb',
+        './models/pig.glb',
         function (gltf) {
-            // Store the model
-            pig = gltf.scene;
+            const model = gltf.scene;
             
-            // Enable shadows and improve materials
-            pig.traverse(function (child) {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    
-                    // Improve material quality
-                    if (child.material) {
-                        child.material.roughness = 0.7; // Less shiny
-                        child.material.metalness = 0.1; // Less metallic
-                        child.material.envMapIntensity = 1.5; // More environment reflection
-                        
-                        // Ensure proper color encoding
-                        child.material.needsUpdate = true;
+            // Center the model
+            model.position.copy(pigPosition); // Use the default position
+            
+            // Enable shadows for the model
+            model.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                    if (node.material) {
+                        node.material.roughness = 0.5;
+                        node.material.metalness = 0.2;
                     }
                 }
             });
             
-            // Position the model using the default position
-            pig.position.copy(pigPosition);
+            scene.add(model);
             
-            // Set visibility based on toggle
-            pig.visible = showPig;
-            
-            // Add to scene
-            scene.add(pig);
-            
-            // Store animations
+            // Store the model and animations globally
+            pig = model;
             pigAnimations = gltf.animations;
+            pigMixer = new THREE.AnimationMixer(model);
             
-            // Create animation mixer
-            pigMixer = new THREE.AnimationMixer(pig);
+            // Log available animations to help with debugging
+            console.log('Available animations:', pigAnimations.map(a => a.name));
             
-            // Find and play the "stand" animation by default
-            if (pigAnimations.length > 0) {
-                // Look for an animation named "stand" or similar
-                let standAnimIndex = 0; // Default to first animation
-                
-                for (let i = 0; i < pigAnimations.length; i++) {
-                    const animName = pigAnimations[i].name.toLowerCase();
-                    if (animName.includes('stand') || animName.includes('idle')) {
-                        standAnimIndex = i;
-                        break;
-                    }
+            // Find the idle/stand animation
+            let idleAnimIndex = 0;
+            for (let i = 0; i < pigAnimations.length; i++) {
+                const animName = pigAnimations[i].name.toLowerCase();
+                if (animName.includes('idle') || (animName.includes('stand') && !animName.includes('standup'))) {
+                    idleAnimIndex = i;
+                    break;
                 }
-                
-                // Play the stand animation
-                const action = pigMixer.clipAction(pigAnimations[standAnimIndex]);
-                action.play();
-                
-                // Update the active animation text
-                updateActiveAnimationText(pigAnimations[standAnimIndex].name);
-                
-                // Update animations control panel
-                updateAnimationsControlPanel();
-                
-                console.log(`Playing pig animation: ${pigAnimations[standAnimIndex].name}`);
             }
             
-            console.log("Pig model loaded at position", pigPosition);
+            // Play the idle animation
+            const idleAction = pigMixer.clipAction(pigAnimations[idleAnimIndex]);
+            idleAction.play();
+            
+            // Update the active animation text
+            updateActiveAnimationText(pigAnimations[idleAnimIndex].name);
+            
+            // Update animations control panel
+            updateAnimationsControlPanel();
+            
+            console.log(`Pig model loaded and playing idle animation: ${pigAnimations[idleAnimIndex].name}`);
         },
-        function (xhr) {
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-        },
+        undefined,
         function (error) {
-            console.error('An error happened loading the pig model', error);
+            console.error('An error occurred loading the model:', error);
         }
     );
 }
@@ -1590,29 +1571,61 @@ function updateToggleState(label, state) {
 function startActionSequence() {
     // Only start if not already running
     if (!actionSequenceRunning) {
-        // Reset flags
+        // Reset flags and stop any existing animations
         actionSequenceRunning = true;
+        if (pigMixer) {
+            pigMixer.stopAllAction();
+        }
         
         // Play the kick animation (same as pressing "2")
-        if (pigMixer && pigAnimations) {
+        if (pigMixer && pigAnimations && pig) {
             // Use animation index 1 (the same as pressing "2")
             const kickAnimIndex = 1;
             
-            // Stop any current animations
-            pigMixer.stopAllAction();
+            // Find the hip bone to track position
+            let hipBone;
+            pig.traverse(node => {
+                if (node.isBone && node.name === "mixamorigHips") {
+                    hipBone = node;
+                }
+            });
             
             // Play the kick animation and store the action
             pigKickAction = pigMixer.clipAction(pigAnimations[kickAnimIndex]);
             
-            // Set the animation to play once and hold the last frame
+            // Set the animation to play once
             pigKickAction.setLoop(THREE.LoopOnce);
-            pigKickAction.clampWhenFinished = true;
-            
-            // Start the animation
+            pigKickAction.clampWhenFinished = false;
             pigKickAction.reset();
             pigKickAction.play();
             
-            console.log(`Pig kick animation started: ${pigAnimations[kickAnimIndex].name} (index ${kickAnimIndex})`);
+            // Remove any existing finished event listeners
+            pigMixer.removeEventListener('finished');
+            
+            // Add event listener for animation sequencing
+            pigMixer.addEventListener('finished', function(e) {
+                if (e.action === pigKickAction && hipBone) {
+                    // Get ending position
+                    const worldPos = new THREE.Vector3();
+                    hipBone.getWorldPosition(worldPos);
+                    
+                    // Update pig position to match end of animation
+                    pig.position.x = worldPos.x;
+                    pig.position.y = 0; // Keep on ground
+                    pig.position.z = worldPos.z;
+                    
+                    // Reset and replay the kick animation
+                    pigKickAction.reset();
+                    pigKickAction.play();
+                    
+                    // Update the active animation text
+                    updateActiveAnimationText(pigAnimations[kickAnimIndex].name);
+                    
+                    console.log(`Replaying kick animation from position:`, worldPos);
+                }
+            });
+            
+            console.log(`Pig kick animation started: ${pigAnimations[kickAnimIndex].name}`);
         }
         
         // Wait a short time before kicking the ball
