@@ -1635,7 +1635,7 @@ function startActionSequence() {
 
                     // Set starting frame (time in seconds)
                     const fps = 30;  // assuming 30 fps animation
-                    const startFrame = 10;
+                    const startFrame = 5;
                     nextKickAction.time = startFrame / fps;
                     
                     // Hold the last frame of the first animation
@@ -1647,9 +1647,9 @@ function startActionSequence() {
                         // Resume the first animation before crossfade
                         // pigKickAction.paused = false;
                         // Crossfade between animations
-                        pigKickAction.crossFadeTo(nextKickAction, 2, true);
+                        pigKickAction.crossFadeTo(nextKickAction, 0.15, false);
                          nextKickAction.play();
-                    }, 600);
+                    }, 0);
                     
                     // Update reference to current action
                     pigKickAction = nextKickAction;
