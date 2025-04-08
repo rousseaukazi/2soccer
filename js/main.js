@@ -1633,16 +1633,21 @@ function startActionSequence() {
 
                     // Set starting frame (time in seconds)
                     const fps = 30;  // assuming 30 fps animation
-                    const startFrame = 40;
+                    const startFrame = 10;
                     nextKickAction.time = startFrame / fps;
                     
-                    // Crossfade between animations
-                    pigKickAction.crossFadeTo(nextKickAction, .4, true);
+                    // Hold the last frame of the first animation
+                    pigKickAction.paused = true;
+                    pigKickAction.time = pigKickAction._clip.duration - 10; // Set to last frame
                     
-                    // Play second animation in next frame
-                    requestAnimationFrame(() => {
-                        nextKickAction.play();
-                    });
+                    // Delay the second animation by 600ms
+                    setTimeout(() => {
+                        // Resume the first animation before crossfade
+                        // pigKickAction.paused = false;
+                        // Crossfade between animations
+                        pigKickAction.crossFadeTo(nextKickAction, 2, true);
+                         nextKickAction.play();
+                    }, 600);
                     
                     // Update reference to current action
                     pigKickAction = nextKickAction;
