@@ -1038,7 +1038,7 @@ function createLights() {
     console.log("Enhanced lighting created");
 }
 
-// Create a light carpet floor instead of grass
+// Create a smooth cartoony grass floor
 function createCarpetFloor() {
     // Remove any existing floor
     scene.children.forEach(child => {
@@ -1047,67 +1047,132 @@ function createCarpetFloor() {
         }
     });
     
-    // Create a texture for a light carpet
+    // Create a larger texture for smoother grass
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024;
+    canvas.height = 1024;
     const context = canvas.getContext('2d');
     
-    // Base color - light beige/cream
-    context.fillStyle = '#F5F0E6';
+    // Base color - bright green for cartoon grass
+    const baseColor = '#7CCD5F';
+    context.fillStyle = baseColor;
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add a subtle carpet pattern
-    context.fillStyle = '#EAE5DB'; // Slightly darker for pattern
+    // Create a gradient background to eliminate tiling edges
+    const gradient = context.createRadialGradient(
+        canvas.width/2, canvas.height/2, 0,
+        canvas.width/2, canvas.height/2, canvas.width * 0.7
+    );
+    gradient.addColorStop(0, baseColor);
+    gradient.addColorStop(0.7, baseColor);
+    gradient.addColorStop(1, '#6BBF53'); // Slightly darker at edges for smooth blending
     
-    // Create a grid pattern for carpet texture
-    const gridSize = 16;
-    for (let x = 0; x < canvas.width; x += gridSize) {
-        for (let y = 0; y < canvas.height; y += gridSize) {
-            // Alternate pattern
-            if ((x / gridSize + y / gridSize) % 2 === 0) {
-                context.fillRect(x, y, gridSize, gridSize);
-            }
-        }
-    }
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Add some random specks for texture
-    context.fillStyle = '#F8F4EA'; // Lighter specks
-    for (let i = 0; i < 5000; i++) {
+    // Add texture and depth to the grass with very soft edges
+    // Darker green patches for depth - use alpha for smoother blending
+    context.fillStyle = 'rgba(94, 175, 63, 0.4)'; // #5EAF3F with alpha
+    
+    // Create varied grass patches with soft edges
+    for (let i = 0; i < 60; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
-        const size = 1 + Math.random();
-        context.fillRect(x, y, size, size);
-    }
-    
-    // Create a few subtle circular patterns
-    context.fillStyle = '#E8E3D9'; // Slightly darker for circular patterns
-    for (let i = 0; i < 20; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        const radius = 10 + Math.random() * 30;
+        const size = 50 + Math.random() * 150;
+        
+        // Use shadow blur for softer edges
+        context.shadowColor = 'rgba(94, 175, 63, 0.4)';
+        context.shadowBlur = 30;
         
         context.beginPath();
-        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.arc(x, y, size, 0, Math.PI * 2);
+        context.fill();
+    }
+    
+    // Reset shadow for next elements
+    context.shadowBlur = 0;
+    
+    // Add lighter green highlights with soft edges
+    context.fillStyle = 'rgba(144, 224, 112, 0.3)'; // #90E070 with alpha
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = 40 + Math.random() * 100;
+        
+        // Use shadow blur for softer edges
+        context.shadowColor = 'rgba(144, 224, 112, 0.3)';
+        context.shadowBlur = 25;
+        
+        context.beginPath();
+        context.arc(x, y, size, 0, Math.PI * 2);
+        context.fill();
+    }
+    
+    // Reset shadow
+    context.shadowBlur = 0;
+    
+    // Add very subtle noise texture across the entire surface
+    for (let i = 0; i < 20000; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = 1 + Math.random() * 2;
+        
+        // Very subtle color variations
+        const alpha = 0.05 + Math.random() * 0.1; // Very transparent
+        
+        // Randomly choose between slightly darker or lighter than base
+        if (Math.random() > 0.5) {
+            context.fillStyle = `rgba(94, 175, 63, ${alpha})`; // Darker
+        } else {
+            context.fillStyle = `rgba(144, 224, 112, ${alpha})`; // Lighter
+        }
+        
+        context.beginPath();
+        context.arc(x, y, size, 0, Math.PI * 2);
+        context.fill();
+    }
+    
+    // Add some small flowers for a playful touch - with soft edges
+    for (let i = 0; i < 300; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = 2 + Math.random() * 4;
+        
+        // Randomly choose flower colors with alpha for better blending
+        const flowerType = Math.floor(Math.random() * 4);
+        if (flowerType === 0) context.fillStyle = 'rgba(255, 255, 255, 0.7)'; // White flowers
+        else if (flowerType === 1) context.fillStyle = 'rgba(255, 244, 79, 0.7)'; // Yellow flowers
+        else if (flowerType === 2) context.fillStyle = 'rgba(255, 151, 203, 0.7)'; // Pink flowers
+        else context.fillStyle = 'rgba(167, 199, 255, 0.7)'; // Light blue flowers
+        
+        // Add glow effect for flowers
+        context.shadowColor = context.fillStyle;
+        context.shadowBlur = 4;
+        
+        context.beginPath();
+        context.arc(x, y, size, 0, Math.PI * 2);
         context.fill();
     }
     
     // Create a texture from the canvas
-    const carpetTexture = new THREE.CanvasTexture(canvas);
-    carpetTexture.wrapS = THREE.RepeatWrapping;
-    carpetTexture.wrapT = THREE.RepeatWrapping;
-    carpetTexture.repeat.set(8, 8); // Repeat the texture
+    const grassTexture = new THREE.CanvasTexture(canvas);
     
-    // Create a floor material with the carpet texture
+    // Use minimal repetition and anisotropic filtering to reduce visible tiling
+    grassTexture.wrapS = THREE.RepeatWrapping;
+    grassTexture.wrapT = THREE.RepeatWrapping;
+    grassTexture.repeat.set(2, 2); // Much less repetition
+    grassTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    
+    // Create a floor material with the grass texture
     const floorMaterial = new THREE.MeshStandardMaterial({
-        map: carpetTexture,
-        roughness: 0.8, // Carpet is not shiny
+        map: grassTexture,
+        roughness: 0.8, // Slightly less rough for smoother appearance
         metalness: 0.0, // Not metallic at all
         color: 0xffffff // White to let the texture show through
     });
     
-    // Create a ground plane
-    const floorGeometry = new THREE.PlaneGeometry(30, 30);
+    // Create a larger ground plane to reduce visible edges
+    const floorGeometry = new THREE.PlaneGeometry(50, 50);
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.name = 'floor';
     
@@ -1119,7 +1184,7 @@ function createCarpetFloor() {
     // Add to scene
     scene.add(floor);
     
-    console.log("Created light carpet floor");
+    console.log("Created smooth cartoony grass floor");
 }
 
 // Create a bright, cheerful cartoony sky with stylized clouds
