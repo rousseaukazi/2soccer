@@ -1843,6 +1843,53 @@ function startActionSequence() {
                                 
                                 // Update the animation name display
                                 updateActiveDuckAnimationText(duckAnimations[4].name);
+                                
+                                // Add event listener for when flip animation finishes
+                                duckMixer.addEventListener('finished', function(e) {
+                                    if (e.action === flipAction) {
+                                        // Store the current position
+                                        const currentPos = duck.position.clone();
+                                        
+                                        // Create the dance animation
+                                        const danceAction = duckMixer.clipAction(duckAnimations[0]);
+                                        danceAction.reset();
+                                        danceAction.setLoop(THREE.LoopRepeat); // Let it loop
+                                        
+                                        // Play the animation for a tiny amount to see where it positions the model
+                                        danceAction.play();
+                                        duckMixer.update(0.001);
+                                        danceAction.stop();
+                                        
+                                        // Calculate the offset between where we want to be and where the animation puts us
+                                        const newPos = duck.position.clone();
+                                        const offset = new THREE.Vector3().subVectors(currentPos, newPos);
+                                        
+                                        // Apply the offset to keep the duck in the same place
+                                        duck.position.add(offset);
+                                        
+                                        // Reset the dance animation
+                                        danceAction.reset();
+                                        
+                                        // Set up a smooth crossfade from flip to dance
+                                        // Keep the flip action enabled but paused at the last frame
+                                        flipAction.enabled = true;
+                                        flipAction.paused = true;
+                                        flipAction.time = flipAction._clip.duration;
+                                        
+                                        // Start the dance with a crossfade
+                                        const crossfadeDuration = 0.5; // Half a second crossfade
+                                        flipAction.crossFadeTo(danceAction, crossfadeDuration, true);
+                                        danceAction.play();
+                                        
+                                        // Update reference to current action
+                                        duckReactAction = danceAction;
+                                        
+                                        // Update the animation name display
+                                        updateActiveDuckAnimationText(duckAnimations[0].name);
+                                        
+                                        console.log(`Duck dance animation started with smooth crossfade: ${duckAnimations[0].name}`);
+                                    }
+                                });
                             }
                         }
                     });
