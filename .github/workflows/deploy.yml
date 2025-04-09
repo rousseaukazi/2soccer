@@ -1,0 +1,27 @@
+name: Deploy is_animating to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master  # or your default branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo (is_animating)
+        uses: actions/checkout@v4
+
+      # If your project needs a build step, insert here
+      # e.g., npm install && npm run build
+      
+      - name: Deploy to rousseaukazi.github.io
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }}
+          external_repository: rousseaukazi/rousseaukazi.github.io
+          publish_branch: main
+          publish_dir: ./  # set this to your build output folder, if applicable
+          destination_dir: is_animating  # This is the key: content goes here
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
