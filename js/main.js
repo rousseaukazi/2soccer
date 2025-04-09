@@ -8,8 +8,6 @@ let showBall = true;
 let showPig = true;
 let showDuck = true;
 let showNet = true;
-let controlsInfo;
-let controlsVisible = false;
 
 // Default positions
 const pigPosition = new THREE.Vector3(0, 0, -3.90);
@@ -100,9 +98,6 @@ function init() {
     loadDuckModel();
     loadBallModel();
     loadNetModel();
-    
-    // Create control panel
-    createControlsPanel();
     
     // Add event listeners
     window.addEventListener('resize', onWindowResize);
@@ -477,60 +472,8 @@ function updateAnimationsControlPanel() {
         return;
     }
     
-    // Update the hotkeys table with animation information
-    const tbody = document.querySelector('#hotkeys-table tbody');
-    if (!tbody) return;
-    
-    // Add animation hotkeys
-    for (let i = 0; i < pigAnimations.length; i++) {
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
-        
-        const keyCell = document.createElement('td');
-        keyCell.style.padding = '4px 8px';
-        
-        const keySpan = document.createElement('span');
-        keySpan.textContent = (i + 1).toString();
-        keySpan.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        keySpan.style.borderRadius = '3px';
-        keySpan.style.padding = '2px 5px';
-        keySpan.style.fontFamily = 'monospace';
-        keySpan.style.fontSize = '11px';
-        
-        keyCell.appendChild(keySpan);
-        
-        const descCell = document.createElement('td');
-        descCell.textContent = `Play pig animation: ${pigAnimations[i].name}`;
-        descCell.style.padding = '4px 8px';
-        
-        row.appendChild(keyCell);
-        row.appendChild(descCell);
-        tbody.appendChild(row);
-    }
-    
-    // Add active animation display
-    const content = document.querySelector('#controls-content');
-    if (!content) return;
-    
-    const animationInfo = document.createElement('div');
-    animationInfo.style.marginTop = '12px';
-    animationInfo.style.padding = '8px';
-    animationInfo.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-    animationInfo.style.borderRadius = '4px';
-    
-    const pigAnimInfo = document.createElement('div');
-    pigAnimInfo.textContent = 'Pig Animations Hotkeys: 1-' + pigAnimations.length;
-    pigAnimInfo.style.marginBottom = '5px';
-    
-    const activePigAnim = document.createElement('div');
-    activePigAnim.id = 'active-pig-animation';
-    activePigAnim.textContent = 'Active: None';
-    
-    animationInfo.appendChild(pigAnimInfo);
-    animationInfo.appendChild(activePigAnim);
-    content.appendChild(animationInfo);
-    
-    console.log("Animations control panel updated");
+    // Remove all control panel updates
+    console.log("Pig animations loaded");
 }
 
 // Update duck animations control panel
@@ -540,83 +483,20 @@ function updateDuckAnimationsControlPanel() {
         return;
     }
     
-    // Update the hotkeys table with animation information
-    const tbody = document.querySelector('#hotkeys-table tbody');
-    if (!tbody) return;
-    
-    // Add animation hotkeys
-    const keys = ['q', 'w', 'e', 'r', 't'];
-    for (let i = 0; i < Math.min(duckAnimations.length, keys.length); i++) {
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
-        
-        const keyCell = document.createElement('td');
-        keyCell.style.padding = '4px 8px';
-        
-        const keySpan = document.createElement('span');
-        keySpan.textContent = keys[i].toUpperCase();
-        keySpan.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        keySpan.style.borderRadius = '3px';
-        keySpan.style.padding = '2px 5px';
-        keySpan.style.fontFamily = 'monospace';
-        keySpan.style.fontSize = '11px';
-        
-        keyCell.appendChild(keySpan);
-        
-        const descCell = document.createElement('td');
-        descCell.textContent = `Play duck animation: ${duckAnimations[i].name}`;
-        descCell.style.padding = '4px 8px';
-        
-        row.appendChild(keyCell);
-        row.appendChild(descCell);
-        tbody.appendChild(row);
-    }
-    
-    // Add active animation display
-    const content = document.querySelector('#controls-content');
-    if (!content) return;
-    
-    // Check if animation info already exists
-    let animationInfo = document.querySelector('#animation-info');
-    if (!animationInfo) {
-        animationInfo = document.createElement('div');
-        animationInfo.id = 'animation-info';
-        animationInfo.style.marginTop = '12px';
-        animationInfo.style.padding = '8px';
-        animationInfo.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-        animationInfo.style.borderRadius = '4px';
-        content.appendChild(animationInfo);
-    }
-    
-    const duckAnimInfo = document.createElement('div');
-    duckAnimInfo.textContent = 'Duck Animations Hotkeys: Q-' + keys[Math.min(duckAnimations.length, keys.length) - 1].toUpperCase();
-    duckAnimInfo.style.marginBottom = '5px';
-    duckAnimInfo.style.marginTop = '10px';
-    
-    const activeDuckAnim = document.createElement('div');
-    activeDuckAnim.id = 'active-duck-animation';
-    activeDuckAnim.textContent = 'Active: None';
-    
-    animationInfo.appendChild(duckAnimInfo);
-    animationInfo.appendChild(activeDuckAnim);
-    
-    console.log("Duck animations control panel updated");
+    // Remove all control panel updates
+    console.log("Duck animations loaded");
 }
 
 // Function to update the active pig animation text
 function updateActiveAnimationText(animationName) {
-    const activeAnimElement = document.getElementById('active-pig-animation');
-    if (activeAnimElement) {
-        activeAnimElement.textContent = `Active: ${animationName}`;
-    }
+    // Remove control panel updates
+    console.log(`Active pig animation: ${animationName}`);
 }
 
 // Function to update the active duck animation text
 function updateActiveDuckAnimationText(animationName) {
-    const activeAnimElement = document.getElementById('active-duck-animation');
-    if (activeAnimElement) {
-        activeAnimElement.textContent = `Active: ${animationName}`;
-    }
+    // Remove control panel updates
+    console.log(`Active duck animation: ${animationName}`);
 }
 
 // Handle keyboard input
@@ -633,8 +513,8 @@ function onKeyDown(event) {
         if (ball) ball.visible = showBall;
         console.log(`Ball visibility: ${showBall ? 'shown' : 'hidden'}`);
         
-        // Update the toggle in the UI if the panel is visible
-        updateToggleState('Ball', showBall);
+        // Remove UI update
+        // updateToggleState('Ball', showBall);
     }
     
     // Check if key is 'p' for toggling pig visibility
@@ -643,8 +523,8 @@ function onKeyDown(event) {
         if (pig) pig.visible = showPig;
         console.log(`Pig visibility: ${showPig ? 'shown' : 'hidden'}`);
         
-        // Update the toggle in the UI if the panel is visible
-        updateToggleState('Pig', showPig);
+        // Remove UI update
+        // updateToggleState('Pig', showPig);
     }
     
     // Check if key is 'd' for toggling duck visibility
@@ -653,8 +533,8 @@ function onKeyDown(event) {
         if (duck) duck.visible = showDuck;
         console.log(`Duck visibility: ${showDuck ? 'shown' : 'hidden'}`);
         
-        // Update the toggle in the UI if the panel is visible
-        updateToggleState('Duck', showDuck);
+        // Remove UI update
+        // updateToggleState('Duck', showDuck);
     }
     
     // Check if key is 'n' for toggling net visibility
@@ -663,13 +543,8 @@ function onKeyDown(event) {
         if (net) net.visible = showNet;
         console.log(`Net visibility: ${showNet ? 'shown' : 'hidden'}`);
         
-        // Update the toggle in the UI if the panel is visible
-        updateToggleState('Net', showNet);
-    }
-    
-    // Check if key is 'm' for toggling the controls menu
-    if (event.key.toLowerCase() === 'm') {
-        toggleControlsPanel();
+        // Remove UI update
+        // updateToggleState('Net', showNet);
     }
     
     // Check if key is 'k' for kicking the ball
