@@ -198,6 +198,9 @@ function animate() {
     
     // Render the scene
     renderer.render(scene, camera);
+    
+    // In your animate function, add this line:
+    updateButtons(clock.getDelta());
 }
 
 // Load the pig model with updated position and default animation
@@ -1830,6 +1833,9 @@ function startActionSequence() {
                                         console.log(`Duck dance animation started with smooth crossfade: ${duckAnimations[0].name}`);
                                     }
                                 });
+                                
+                                // Show the goodbye button when the dance animation starts
+                                createGoodbyeButton();
                             }
                         }
                     });
@@ -1939,6 +1945,11 @@ function resetScene() {
                 child.material.opacity = 1;
             }
         }
+        
+        // Remove goodbye button
+        if (child.name === 'goodbyeButton') {
+            scene.remove(child);
+        }
     });
     
     console.log("Scene fully reset to initial state");
@@ -1961,12 +1972,12 @@ function kickBall() {
     }
 }
 
-// Create a stylized welcome button with clean dark gold color (no white shader)
+// Create a stylized welcome button with dark gold color
 function createWelcomeButton() {
     // Create a canvas for the button texture
     const canvas = document.createElement('canvas');
-    canvas.width = 1200; // Wider canvas for more padding
-    canvas.height = 600; // Taller canvas for bigger text
+    canvas.width = 1200;
+    canvas.height = 600;
     const context = canvas.getContext('2d');
     
     // Clear the canvas completely first
@@ -1974,12 +1985,12 @@ function createWelcomeButton() {
     
     // Button background - rounded rectangle with dark gold gradient
     const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#D4AF37');  // Gold top
-    gradient.addColorStop(1, '#996515');  // Darker gold/bronze bottom
+    gradient.addColorStop(0, '#6A1B9A');  // purple top
+    gradient.addColorStop(1, '#38006B');  // purple bottom
     
     // Draw rounded rectangle for button with padding
-    const cornerRadius = 60; // Larger corner radius
-    const padding = 80; // Significant padding around the edges
+    const cornerRadius = 60;
+    const padding = 80;
     
     // Draw the button shape
     context.beginPath();
@@ -2010,50 +2021,18 @@ function createWelcomeButton() {
     context.shadowOffsetX = 2;
     context.shadowOffsetY = 2;
     
-    // Calculate safe text area with padding
-    const textAreaWidth = canvas.width - (padding * 2);
-    const textAreaHeight = canvas.height - (padding * 2);
-    const textCenterX = canvas.width / 2;
-    const textCenterY = canvas.height / 2;
-    
-    // Add welcome text with much bigger font
+    // Add main text - using consistent font size of 90px
     context.fillStyle = 'white';
-    context.font = 'bold 100px Arial, sans-serif';
+    context.font = 'bold 90px Arial, sans-serif';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // Measure text to ensure it fits within padding
-    let welcomeText = 'Welcome to Office Soccer!';
-    let textWidth = context.measureText(welcomeText).width;
+    // Draw the main text
+    context.fillText('WELCOME!', canvas.width/2, canvas.height/2 - 80);
     
-    // If text is too wide, reduce font size until it fits
-    let welcomeFontSize = 100;
-    while (textWidth > textAreaWidth && welcomeFontSize > 60) {
-        welcomeFontSize -= 5;
-        context.font = `bold ${welcomeFontSize}px Arial, sans-serif`;
-        textWidth = context.measureText(welcomeText).width;
-    }
-    
-    // Draw the welcome text
-    context.fillText(welcomeText, textCenterX, textCenterY - 80);
-    
-    // Add instruction text with bigger font
-    let instructionFontSize = 80;
-    context.font = `bold ${instructionFontSize}px Arial, sans-serif`;
-    
-    // Measure instruction text
-    let instructionText = 'Press S to start';
-    textWidth = context.measureText(instructionText).width;
-    
-    // If text is too wide, reduce font size until it fits
-    while (textWidth > textAreaWidth && instructionFontSize > 50) {
-        instructionFontSize -= 5;
-        context.font = `bold ${instructionFontSize}px Arial, sans-serif`;
-        textWidth = context.measureText(instructionText).width;
-    }
-    
-    // Draw the instruction text
-    context.fillText(instructionText, textCenterX, textCenterY + 80);
+    // Add instruction text - using consistent font size of 60px
+    context.font = 'bold 60px Arial, sans-serif';
+    context.fillText('Press S to start', canvas.width/2, canvas.height/2 + 80);
     
     // Create a texture from the canvas
     const buttonTexture = new THREE.CanvasTexture(canvas);
@@ -2065,15 +2044,15 @@ function createWelcomeButton() {
         side: THREE.DoubleSide
     });
     
-    // Create a plane for the button - wider to match the new aspect ratio
-    const buttonGeometry = new THREE.PlaneGeometry(5, 2.5); // Adjusted for new canvas dimensions
+    // Create a plane for the button
+    const buttonGeometry = new THREE.PlaneGeometry(5, 2.5);
     const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
     
     // Position the button in front of the camera
-    button.position.set(0, 2, 0); // Centered and above the floor
+    button.position.set(0, 2, 0);
     button.name = 'welcomeButton';
     
-    // Make the button always face the camera
+    // Make sure it faces the camera initially
     button.lookAt(camera.position);
     
     // Add a slight floating animation
@@ -2081,21 +2060,21 @@ function createWelcomeButton() {
         startY: 2,
         amplitude: 0.1,
         speed: 0.001,
-        startTime: 0
+        startTime: Date.now()
     };
     
     // Add to scene
     scene.add(button);
     
-    console.log("Welcome button created with clean dark gold color (no white shader)");
-    
     // Add a pulsing effect to make it more noticeable
     addButtonPulseEffect(button);
+    
+    console.log("Welcome button created with dark gold color");
 }
 
-// Add a pulsing effect to the button
+// Make sure this function exists and works for both buttons
 function addButtonPulseEffect(button) {
-    // Create a timeline for the animation
+    // Create a timeline for pulsing effect
     const timeline = {
         time: 0,
         duration: 2000, // 2 seconds per pulse
@@ -2104,8 +2083,31 @@ function addButtonPulseEffect(button) {
         pulsing: true
     };
     
-    // Store the timeline on the button
+    // Add the timeline to the button's userData
     button.userData.timeline = timeline;
+    
+    // Create an update function for the pulse effect
+    const updatePulse = (deltaTime) => {
+        if (!button.userData.timeline.pulsing) return;
+        
+        // Update time
+        button.userData.timeline.time += deltaTime * 1000;
+        if (button.userData.timeline.time > button.userData.timeline.duration) {
+            button.userData.timeline.time = 0;
+        }
+        
+        // Calculate scale based on time
+        const progress = button.userData.timeline.time / button.userData.timeline.duration;
+        const scale = button.userData.timeline.startScale + 
+                     (button.userData.timeline.endScale - button.userData.timeline.startScale) * 
+                     (Math.sin(progress * Math.PI * 2) * 0.5 + 0.5);
+        
+        // Apply scale
+        button.scale.set(scale, scale, scale);
+    };
+    
+    // Add the update function to the button
+    button.userData.updatePulse = updatePulse;
 }
 
 // Reset camera to default position
@@ -2152,4 +2154,120 @@ function resetCameraPosition() {
     
     // Start the transition
     updateCameraPosition();
+}
+
+// Create a stylized goodbye button with red color
+function createGoodbyeButton() {
+    // Create a canvas for the button texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 600;
+    const context = canvas.getContext('2d');
+    
+    // Clear the canvas completely first
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Button background - rounded rectangle with red gradient
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#FF3333');  // Bright red top
+    gradient.addColorStop(1, '#990000');  // Darker red bottom
+    
+    // Draw rounded rectangle for button with padding
+    const cornerRadius = 60;
+    const padding = 80;
+    
+    // Draw the button shape
+    context.beginPath();
+    context.moveTo(cornerRadius, 0);
+    context.lineTo(canvas.width - cornerRadius, 0);
+    context.quadraticCurveTo(canvas.width, 0, canvas.width, cornerRadius);
+    context.lineTo(canvas.width, canvas.height - cornerRadius);
+    context.quadraticCurveTo(canvas.width, canvas.height, canvas.width - cornerRadius, canvas.height);
+    context.lineTo(cornerRadius, canvas.height);
+    context.quadraticCurveTo(0, canvas.height, 0, canvas.height - cornerRadius);
+    context.lineTo(0, cornerRadius);
+    context.quadraticCurveTo(0, 0, cornerRadius, 0);
+    context.closePath();
+    
+    // Fill with gradient
+    context.fillStyle = gradient;
+    context.fill();
+    
+    // Add a subtle shadow for depth
+    context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    context.shadowBlur = 15;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 10;
+    
+    // Reset shadow for text
+    context.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    context.shadowBlur = 5;
+    context.shadowOffsetX = 2;
+    context.shadowOffsetY = 2;
+    
+    // Add main text - using consistent font size of 90px
+    context.fillStyle = 'white';
+    context.font = 'bold 90px Arial, sans-serif';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    
+    // Draw the main text
+    context.fillText('PIG LOSES', canvas.width/2, canvas.height/2 - 80);
+    
+    // Add instruction text - using consistent font size of 60px
+    context.font = 'bold 60px Arial, sans-serif';
+    context.fillText('Press R to reset the scene', canvas.width/2, canvas.height/2 + 80);
+    
+    // Create a texture from the canvas
+    const buttonTexture = new THREE.CanvasTexture(canvas);
+    
+    // Create a material with the button texture
+    const buttonMaterial = new THREE.MeshBasicMaterial({
+        map: buttonTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+    
+    // Create a plane for the button
+    const buttonGeometry = new THREE.PlaneGeometry(5, 2.5);
+    const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
+    
+    // Position the button in front of the camera
+    button.position.set(0, 2, 0);
+    button.name = 'goodbyeButton';
+    
+    // Make sure it faces the camera initially
+    button.lookAt(camera.position);
+    
+    // Add a slight floating animation
+    button.userData = {
+        startY: 2,
+        amplitude: 0.1,
+        speed: 0.001,
+        startTime: Date.now()
+    };
+    
+    // Add to scene
+    scene.add(button);
+    
+    // Add a pulsing effect to make it more noticeable
+    addButtonPulseEffect(button);
+    
+    console.log("Goodbye button created with red color");
+}
+
+// Add this function to your code
+function updateButtons(deltaTime) {
+    scene.children.forEach(child => {
+        if (child.name === 'welcomeButton' || child.name === 'goodbyeButton') {
+            // Make button always face the camera
+            child.lookAt(camera.position);
+            
+            // Apply floating animation
+            if (child.userData && child.userData.startY !== undefined) {
+                const time = Date.now() * child.userData.speed;
+                child.position.y = child.userData.startY + Math.sin(time) * child.userData.amplitude;
+            }
+        }
+    });
 }
