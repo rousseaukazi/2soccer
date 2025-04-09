@@ -1981,10 +1981,21 @@ function resetScene() {
     // Stop any running sequence
     actionSequenceRunning = false;
     
-    // Reset ball position
+    // Reset ball position and rotation
     if (ball) {
         ball.position.copy(ballStartPosition);
         ball.rotation.set(0, 0, 0);
+    }
+    
+    // Reset pig position and animation
+    if (pig) {
+        pig.position.copy(pigPosition); // Reset to default position
+    }
+    
+    // Reset duck position and animation
+    if (duck) {
+        duck.position.copy(duckPosition); // Reset to default position
+        duck.rotation.y = Math.PI; // Reset rotation (180 degrees)
     }
     
     // Reset animations
@@ -2004,6 +2015,7 @@ function resetScene() {
             }
             
             const action = pigMixer.clipAction(pigAnimations[standAnimIndex]);
+            action.reset();
             action.play();
             
             updateActiveAnimationText(pigAnimations[standAnimIndex].name);
@@ -2026,6 +2038,7 @@ function resetScene() {
             }
             
             const action = duckMixer.clipAction(duckAnimations[standAnimIndex]);
+            action.reset();
             action.play();
             
             updateActiveDuckAnimationText(duckAnimations[standAnimIndex].name);
@@ -2038,7 +2051,22 @@ function resetScene() {
     pigAnimationStarted = false;
     duckReactionStarted = false;
     
-    console.log("Scene reset to initial state");
+    // Reset camera position
+    resetCameraPosition();
+    
+    // Make welcome button visible again if it was hidden
+    scene.children.forEach(child => {
+        if (child.name === 'welcomeButton') {
+            child.visible = true;
+            
+            // Reset opacity if it was faded
+            if (child.material) {
+                child.material.opacity = 1;
+            }
+        }
+    });
+    
+    console.log("Scene fully reset to initial state");
 }
 
 // Kick the ball with a smooth, simple arc
