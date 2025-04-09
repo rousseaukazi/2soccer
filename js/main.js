@@ -2032,7 +2032,7 @@ function createWelcomeButton() {
     
     // Add instruction text - using consistent font size of 60px
     context.font = 'bold 60px Arial, sans-serif';
-    context.fillText('Press S to start', canvas.width/2, canvas.height/2 + 80);
+    context.fillText('Press s to start', canvas.width/2, canvas.height/2 + 80);
     
     // Create a texture from the canvas
     const buttonTexture = new THREE.CanvasTexture(canvas);
